@@ -1,0 +1,384 @@
+<style>
+    h3.h3 {
+        text-align: center;
+        margin: 1em;
+        text-transform: capitalize;
+        font-size: 1.7em;
+    }
+
+    @media only screen and (max-width:990px) {
+        .product-grid6 {
+            margin-bottom: 30px
+        }
+    }
+
+    .modal {
+        text-align: center;
+    }
+
+    @media screen and (min-width: 768px) {
+        .modal:before {
+            display: inline-block;
+            vertical-align: middle;
+            content: " ";
+            height: 100%;
+        }
+    }
+
+    .modal-dialog {
+        width: 900px;
+        display: inline-block;
+        text-align: left;
+        vertical-align: middle;
+    }
+
+    .input-em-linha {
+        border-top-style: none;
+        border-left-style: none;
+        border-right-style: none;
+        width: 100%;
+        text-align: center;
+    }
+
+    .modal-cor-fundo {
+
+        background-color: #e7e7e7;
+    }
+
+    .modal-menor {
+        text-align: center;
+        width: 50%;
+        margin-left: 25%;
+    }
+
+    .painel-programacao {
+        width: 82%;
+        margin-top: 3%;
+        margin-left: 10%;
+    }
+
+    .botao-lado-esquerdo {
+        margin-left: 75%;
+    }
+
+    .botao-tela-inicial {
+        font-size: 20px;
+    }
+
+    .ul-sem-marker {
+        list-style: none;
+        margin-bottom: -8%;
+        margin-left: -7%;
+    }
+</style>
+
+
+<form id="formPesquisaProgramacao">
+    <div class="modal fade modal-cor-fundo" id="modalAcompanharProg1" tabindex="-1" role="dialog"
+        data-backdrop="static">
+        <div class="modal-dialog scrollable" role="document" style="width: 40%; height: 60%">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="">Programações</h5>
+                </div>
+                <div id="corpoModalPesquisaProgramacao" class="modal-body" style="max-height: 60vh">
+                    <div class="row">
+                        <div style="margin-left: 10%; width: 44%; ">
+                            <div style="margin-left: 10%;width: 160%;" class="input-group">
+                                <input id="filtroEndereco" type="text" class="form-control"
+                                    placeholder="Buscar endereço" list="enderecos" onfocus="filtroEnderecos()"
+                                    required />
+                                <div class="input-group-btn">
+                                    <button id="pesquisaProgramacao" class="btn btn-success" type="button">
+                                        Buscar
+                                        &nbsp;<i class="glyphicon glyphicon-search"></i></button></input>
+                                </div>
+                                <datalist id="enderecos"></datalist>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tracoSelProgramacao" class="container painel-programacao"
+                        style="overflow-y: scroll; max-height: 45vh; margin-bottom:50px;"></div>
+                    <div id="panelProgNaoEncontrada" class="container painel-programacao"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div id="modalDetalhes" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content" style="width: 125%; margin-left: -11%;">
+            <div class="modal-header">
+                <h5>Detalhes traço programado</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="corpoModalDetalhes" class="modal-body"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Requisição -->
+<div id="modalLoading" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sincronizando Informações</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function abrirModalDetalhesInicio(i, traco, diaProgramacao, qtdProgramada, qtdUtilizada){
+        console.log("i", i);
+        console.log(traco, diaProgramacao, qtdProgramada, qtdUtilizada);  
+
+        var modalDetalhesHTML = "";
+
+        modalDetalhesHTML += `<div name="corpoModalDetalhes">
+							<table class="table table-hover">
+							  <thead>
+								<tr>
+								  <th scope="col">Traço</th>
+								  <th style="text-align: center;" scope="col">Volume em carregamento</th>
+								  <th style="text-align: center;" scope="col">Volume Programado</th>
+								  <th style="text-align: center;" scope="col">Volume Entregue</th>
+								</tr>
+							  </thead>
+							  <tbody style="font-size: 13px;">
+									<tr>
+									  <th style=" text-align: center;" scope="row">${traco}</th>
+									  <td style="text-align: center"> - </td>
+									  <td style="text-align: center">${qtdProgramada}</td>
+									  <td style="text-align: center">${qtdUtilizada}</td>
+									  <td>
+									  <a role="button"  href="https://google.com.br" target="_blank" rel="noopener noreferrer" class="link-info">
+											<label style="font-size: smaller; padding-left: 25%;">Acompanhar carga  &nbsp; <i class="glyphicon glyphicon-eye-open"></i></label> 
+										</a>
+										</td>										
+									</tr>
+							  </tbody>
+							</table>
+						</div>`;
+
+        document.getElementById("corpoModalDetalhes").innerHTML = modalDetalhesHTML;
+
+    };
+
+    $(document).ready(function () {
+
+        var carregaHtml = "";
+
+        var parametros = {
+            idCvtccnpj: dadosUserLogado().cId,
+            numreg: 751,
+            pRotina: "acompanharProgramacao"
+        };
+
+        $.ajax({
+            url: dadosUserLogado().cContextIntegracao + '/rest/Listas/executarRequisicaoExterna',
+            type: "POST",
+            data: JSON.stringify(parametros),
+            success: function (response) {
+
+                var objRetorno = JSON.parse(response);
+                
+                console.log(objRetorno);
+                
+                objRetorno.map(({status, central, endereco, numeroContrato, programacoes }, i) => {
+                    carregaHtml += `<div name="tracoSelProgramacao" class="panel panel-primary">
+															  <div class="panel-body">
+																<ul class="ul-sem-marker">
+																	<li> <b>Central: </b>${central} </li>
+																	<li> <b>Endereço:</b> ${endereco}</li>
+																	<li id="tracoPanel"> <b>Traço:</b> ${programacoes[0].traco}</li>
+																	<li> <b>Data Programação:</b> ${programacoes[0].diaProgramacao}</li>
+																	<li><b> Quantidade Programada: </b> ${programacoes[0].qtdProgramada}</li> 
+                                                                    <li><b> Status: </b> ${status}</li> 
+																</ul>
+																<button value="${i}" data-toggle="modal" data-target="#modalDetalhes"
+                                                                    id="detalhes" class="btn btn-link botao-lado-esquerdo" type="button"
+                                                                    onClick="abrirModalDetalhesInicio(this.value,
+                                                                                                      '${programacoes[0].traco}',
+                                                                                                      '${programacoes[0].diaProgramacao}',
+                                                                                                      '${programacoes[0].qtdProgramada}',
+                                                                                                      '${programacoes[0].qtdUtilizada}')"
+                                                                                                      >
+																<i class="glyphicon glyphicon-zoom-in"></i> Detalhes </button>														
+															  </div>
+															</div>`
+                });
+                document.getElementById("tracoSelProgramacao").innerHTML = carregaHtml;
+            },
+            beforeSend: function () {
+                $("#loadingModal").modal({ backdrop: 'static', keyboard: false });
+            },
+            complete: function () {
+                $("#loadingModal").modal('hide');
+            },
+            error: function (response) {
+                alert();
+            }
+
+        });
+    });
+
+
+    $(document).ready(function () {
+        $('#modalAcompanharProg1').modal('show');
+    });
+
+    function filtroEnderecos() {
+
+        var parametros = {
+            idCvtccnpj: dadosUserLogado().cId,
+            numreg: 751,
+            pRotina: "acompanharProgramacao"
+        };
+
+        $.ajax({
+            url: dadosUserLogado().cContextIntegracao + '/rest/Listas/executarRequisicaoExterna',
+            type: "POST",
+            data: JSON.stringify(parametros),
+
+            success: function (response) {
+
+                var objRetorno = JSON.parse(response);
+
+                var enderecosExistentesHTML = "";
+
+                objRetorno.map(({ endereco, numeroContrato }) => enderecosExistentesHTML += `<option id="${endereco}" name="enderecos"> ${endereco} | ${numeroContrato}</option>`);
+                document.getElementById("enderecos").innerHTML = enderecosExistentesHTML;
+
+            },
+            error: function (response) {
+                alert(response);
+            }
+        });
+
+    };
+
+    var dadosEnderecoSelecionado;
+
+    function abrirContratosProgramados() {
+
+        var parametros = {
+            idCvtccnpj: dadosUserLogado().cId,
+            numreg: 751,
+            pRotina: "acompanharProgramacao"
+        };
+
+        $.ajax({
+            url: dadosUserLogado().cContextIntegracao + '/rest/Listas/executarRequisicaoExterna',
+            type: "POST",
+            data: JSON.stringify(parametros),
+            success: function (response) {
+
+                var objRetorno = JSON.parse(response);
+
+                var enderecoContrato = document.getElementById("filtroEndereco").value.split(" | ")[0];
+
+                var enderecoFiltrado = objRetorno.find(obj => obj.endereco == enderecoContrato);
+
+                dadosEnderecoSelecionado = enderecoFiltrado;
+
+                var tracoSelecionadoHTML = "";
+
+                dadosEnderecoSelecionado.programacoes.map(({ traco, diaProgramacao, qtdProgramada, saldoProgramacao, responsavelObra, contato }, i) => {
+
+                    tracoSelecionadoHTML += `<div name="tracoSelProgramacao" class="panel panel-primary">
+															  <div class="panel-body">
+																<ul class="ul-sem-marker">
+																	<li> <b>Central: </b>${dadosEnderecoSelecionado.central} </li>
+																	<li> <b>Endereço:</b> ${dadosEnderecoSelecionado.endereco}</li>
+																	<li id="tracoPanel"> <b>Traço:</b> ${traco}</li>
+																	<li> <b>Data Programação:</b> ${diaProgramacao}</li>
+																	<li><b> Quantidade Programada: </b> ${qtdProgramada}</li> 
+																</ul>
+																<button value="${i}" data-toggle="modal" data-target="#modalDetalhes" id="botaoDetalhes"
+                                                                     class="btn btn-link botao-lado-esquerdo" type="button" 
+                                                                     onClick="abrirModalDetalhes(this.value)">
+																<i class="glyphicon glyphicon-zoom-in"></i> Detalhes </button>														
+															  </div>
+															</div>`
+
+                });
+                document.getElementById("tracoSelProgramacao").innerHTML = tracoSelecionadoHTML;
+            },
+            beforeSend: function () {
+                $("#loadingModal").modal({ backdrop: 'static', keyboard: false });
+            },
+            complete: function () {
+                $("#loadingModal").modal('hide');            
+            },
+            error: function (response) {
+                alert();
+            }
+        });
+    };
+
+    $("#pesquisaProgramacao").click(function () {
+        var formulario = document.getElementById("formPesquisaProgramacao");
+        if (!formulario.checkValidity()) {
+            alert("Por favor, informe um endereço no campo de busca...");
+        } else {
+            abrirContratosProgramados();
+        }
+    });
+
+    $("#pesquisaProgramacao").submit(function (e) {
+        e.preventDefault();
+    });
+
+    function abrirModalDetalhes(i) {
+
+        var panelSelecionado = dadosEnderecoSelecionado.programacoes[i];
+
+        console.log("panelSelecionado",panelSelecionado);
+
+        var modalDetalhesHTML = "";
+
+        modalDetalhesHTML += `<div name="corpoModalDetalhes">
+							<table class="table table-hover">
+							  <thead>
+								<tr>
+								  <th scope="col">Traço</th>
+								  <th style="text-align: center;" scope="col">Volume em carregamento</th>
+								  <th style="text-align: center;" scope="col">Volume Programado</th>
+								  <th style="text-align: center;" scope="col">Volume Entregue</th>
+								  <th style="text-align: center;" scope="col">Situação</th>
+								</tr>
+							  </thead>
+							  <tbody style="font-size: 13px;">
+									<tr>
+									  <th style=" text-align: center;" scope="row">${panelSelecionado.traco}</th>
+									  <td style="text-align: center"></td>
+									  <td style="text-align: center">${panelSelecionado.qtdProgramada}</td>
+									  <td style="text-align: center">${panelSelecionado.qtdUtilizada}</td>
+									  <td style="text-align: center"> Em andamento</td>
+									  <td>
+									  <a role="button"  href="https://google.com.br" target="_blank" rel="noopener noreferrer" class="link-info">
+											<label style="font-size: smaller; padding-left: 25%;">Acompanhar carga  &nbsp; <i class="glyphicon glyphicon-eye-open"></i></label> 
+										</a>
+										</td>										
+									</tr>
+							  </tbody>
+							</table>
+						</div>`;
+
+        document.getElementById("corpoModalDetalhes").innerHTML = modalDetalhesHTML;
+    };
+
+</script>
